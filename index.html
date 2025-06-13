@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D Record Player</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+      }
+      #controls {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.7);
+        padding: 10px 20px;
+        border-radius: 5px;
+        color: white;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      button {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        background: #4caf50;
+        color: white;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #45a049;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="controls">
+      <button id="playPause">再生/停止</button>
+      <input type="file" id="audioFile" accept="audio/*" />
+    </div>
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>
