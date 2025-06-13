@@ -3,60 +3,105 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 // シーンの設定
 const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x333333);
+
 const camera = new THREE.PerspectiveCamera(
   75,
   window.innerWidth / window.innerHeight,
   0.1,
   1000
 );
-const renderer = new THREE.WebGLRenderer();
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
 document.body.appendChild(renderer.domElement);
 
 // カメラの位置設定
-camera.position.z = 5;
+camera.position.set(0, 2, 5);
+camera.lookAt(0, 0, 0);
 
 // オービットコントロールの追加
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
+controls.minDistance = 3;
+controls.maxDistance = 10;
+controls.maxPolarAngle = Math.PI / 2;
 
 // ライティング
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(ambientLight);
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-directionalLight.position.set(0, 1, 0);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+directionalLight.position.set(5, 5, 5);
+directionalLight.castShadow = true;
 scene.add(directionalLight);
 
-// レコードプレイヤーの作成
-const createRecordPlayer = () => {
+// ターテーブルの作成
+const createTurntable = () => {
   const group = new THREE.Group();
 
   // ベース（黒い台座）
-  const baseGeometry = new THREE.CylinderGeometry(2, 2, 0.2, 32);
-  const baseMaterial = new THREE.MeshPhongMaterial({ color: 0x333333 });
+  const baseGeometry = new THREE.BoxGeometry(4, 0.2, 4);
+  const baseMaterial = new THREE.MeshPhongMaterial({
+    color: 0x1a1a1a,
+    shininess: 30,
+  });
   const base = new THREE.Mesh(baseGeometry, baseMaterial);
+  base.receiveShadow = true;
   group.add(base);
 
-  // レコード（円盤）
-  const recordGeometry = new THREE.CylinderGeometry(1.8, 1.8, 0.02, 32);
-  const recordMaterial = new THREE.MeshPhongMaterial({ color: 0x111111 });
+  // ターンテーブル（回転台）
+  const platterGeometry = new THREE.CylinderGeometry(1.8, 1.8, 0.1, 32);
+  const platterMaterial = new THREE.MeshPhongMaterial({
+    color: 0x2a2a2a,
+    shininess: 50,
+  });
+  const platter = new THREE.Mesh(platterGeometry, platterMaterial);
+  platter.position.y = 0.15;
+  platter.castShadow = true;
+  platter.receiveShadow = true;
+  group.add(platter);
+
+  // レコード
+  const recordGeometry = new THREE.CylinderGeometry(1.7, 1.7, 0.02, 32);
+  const recordMaterial = new THREE.MeshPhongMaterial({
+    color: 0x111111,
+    shininess: 100,
+  });
   const record = new THREE.Mesh(recordGeometry, recordMaterial);
-  record.position.y = 0.11;
+  record.position.y = 0.21;
+  record.castShadow = true;
+  record.receiveShadow = true;
   group.add(record);
 
   // レコードの中心部分
   const centerGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.03, 32);
-  const centerMaterial = new THREE.MeshPhongMaterial({ color: 0x666666 });
+  const centerMaterial = new THREE.MeshPhongMaterial({
+    color: 0x666666,
+    shininess: 100,
+  });
   const center = new THREE.Mesh(centerGeometry, centerMaterial);
-  center.position.y = 0.125;
+  center.position.y = 0.225;
+  center.castShadow = true;
   group.add(center);
 
-  return { group, record };
+  // レコードの溝を表現
+  const groovesGeometry = new THREE.RingGeometry(0.2, 1.7, 64, 1);
+  const groovesMaterial = new THREE.MeshPhongMaterial({
+    color: 0x222222,
+    side: THREE.DoubleSide,
+    shininess: 100,
+  });
+  const grooves = new THREE.Mesh(groovesGeometry, groovesMaterial);
+  grooves.rotation.x = Math.PI / 2;
+  grooves.position.y = 0.22;
+  group.add(grooves);
+
+  return { group, record, platter };
 };
 
-const { group, record } = createRecordPlayer();
+const { group, record, platter } = createTurntable();
 scene.add(group);
 
 // オーディオ関連の変数
@@ -127,8 +172,9 @@ playPauseButton.addEventListener("click", () => {
 function animate() {
   requestAnimationFrame(animate);
 
-  // レコードの回転
+  // レコードとターンテーブルの回転
   record.rotation.y += rotationSpeed;
+  platter.rotation.y += rotationSpeed;
 
   controls.update();
   renderer.render(scene, camera);
