@@ -69,9 +69,13 @@ const createTurntable = () => {
   platter.receiveShadow = true;
   group.add(platter);
 
+  // レコードの回転部分をグループ化
+  const recordGroup = new THREE.Group();
+  recordGroup.position.y = 0.15;
+
   // レコードの溝を表現するための複数のリング
   const groovesGroup = new THREE.Group();
-  const numGrooves = 30; // 溝の数
+  const numGrooves = 30;
   const innerRadius = 0.2;
   const outerRadius = 1.7;
   const grooveWidth = (outerRadius - innerRadius) / numGrooves;
@@ -92,10 +96,10 @@ const createTurntable = () => {
     });
     const groove = new THREE.Mesh(grooveGeometry, grooveMaterial);
     groove.rotation.x = Math.PI / 2;
-    groove.position.y = 0.22;
+    groove.position.y = 0.07;
     groovesGroup.add(groove);
   }
-  group.add(groovesGroup);
+  recordGroup.add(groovesGroup);
 
   // レコードの表面（光沢のある黒）
   const recordGeometry = new THREE.CylinderGeometry(1.7, 1.7, 0.02, 32);
@@ -107,10 +111,10 @@ const createTurntable = () => {
     opacity: 0.9,
   });
   const record = new THREE.Mesh(recordGeometry, recordMaterial);
-  record.position.y = 0.21;
+  record.position.y = 0.06;
   record.castShadow = true;
   record.receiveShadow = true;
-  group.add(record);
+  recordGroup.add(record);
 
   // レコードの中心部分
   const centerGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.03, 32);
@@ -120,9 +124,9 @@ const createTurntable = () => {
     specular: 0x888888,
   });
   const center = new THREE.Mesh(centerGeometry, centerMaterial);
-  center.position.y = 0.225;
+  center.position.y = 0.075;
   center.castShadow = true;
-  group.add(center);
+  recordGroup.add(center);
 
   // レコードのラベル（中心の円）
   const labelGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.031, 32);
@@ -131,13 +135,18 @@ const createTurntable = () => {
     shininess: 50,
   });
   const label = new THREE.Mesh(labelGeometry, labelMaterial);
-  label.position.y = 0.226;
-  group.add(label);
+  label.position.y = 0.076;
+  recordGroup.add(label);
 
-  return { group, record, platter, groovesGroup };
+  // レコードグループを別のグループとして追加
+  const recordContainer = new THREE.Group();
+  recordContainer.add(recordGroup);
+  group.add(recordContainer);
+
+  return { group, recordGroup, recordContainer };
 };
 
-const { group, record, platter, groovesGroup } = createTurntable();
+const { group, recordGroup, recordContainer } = createTurntable();
 scene.add(group);
 
 // オーディオ関連の変数
@@ -207,14 +216,24 @@ playPauseButton.addEventListener("click", () => {
   }
 });
 
+// レコードの回転角度を保持する変数
+let recordRotation = 0;
+
+// オブジェクトの回転を制御
+controls.addEventListener("change", () => {
+  // レコードグループの回転を保持
+  recordGroup.rotation.y = recordRotation;
+});
+
 // アニメーションループ
 function animate() {
   requestAnimationFrame(animate);
 
-  // レコードとターンテーブルの回転
-  record.rotation.y += rotationSpeed;
-  platter.rotation.y += rotationSpeed;
-  groovesGroup.rotation.y += rotationSpeed;
+  // レコードの回転（再生時のみ）
+  if (isPlaying) {
+    recordRotation += rotationSpeed;
+    recordGroup.rotation.y = recordRotation;
+  }
 
   controls.update();
   renderer.render(scene, camera);
